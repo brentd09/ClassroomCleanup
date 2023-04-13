@@ -9,22 +9,29 @@ function Remove-BrowserCache {
     This script will choose all three browsers if none are chosen from the BrowserType
     parameter.
   .Parameter BrowserType
-    This parameter has three options Chrome, Firefox and IExplore. These can be entered
+    This parameter has four options Chrome, Firefox, Edge and IExplore. These can be entered
     as an array seperated by commas as per the examples in this help.
   .EXAMPLE
     Remove-BrowserCache
-    Deletes the user data from Chrome, Firefox and IE (the default targets all three browsers)
+    Deletes the user data from Chrome, Firefox, Edge and IE (the default targets all four browsers)
   .EXAMPLE
     Remove-BrowserCache -BrowserType IExplore,Chrome
     Deletes the user data from Chrome and IE only
   .EXAMPLE
     Remove-BrowserCache -BrowserType Chrome
     Deletes the user data from Chrome only
+  .EXAMPLE
+    Remove-BrowserCache -BrowserType MsEdge
+    Deletes the user data from Edge only    
   .NOTES
     General notes
     Created by: Brent Denny
     Created on: 9 Aug 2019
     Updated on: 13 Apr 2023
+
+    Version:
+    0.0.1 - 9 Aug 2019 - Initial version for trail
+    1.0.0 - 13 Apr 2023 - Version that also incorporates Edge 
   #>
   [CmdletBinding(SupportsShouldProcess=$true,ConfirmImpact='Medium')]
   Param(
@@ -80,6 +87,14 @@ function Remove-BrowserCache {
         invoke-command -ScriptBlock {RunDll32.exe InetCpl.cpl, ClearMyTracksByProcess 255}
       }
     }
-    Default {Write-Warning 'Failed to clear user data, can only clear user data from Chrome, Firefox and Internet Explorer'}
+    {$_ -contains 'MSEdge'} {
+      if ($PSCmdlet.ShouldProcess('Edge', "Delete User Data")) {
+        Write-Warning 'Attempting to clear user data from Edge'
+        if (Test-Path "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default") {
+          Remove-Item "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default" -Recurse -Force
+        }
+      }
+    }    
+    Default {Write-Warning 'Failed to clear user data, can only clear user data from Chrome, Firefox, Edge and Internet Explorer'}
   }
 }
