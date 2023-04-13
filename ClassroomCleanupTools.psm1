@@ -1,12 +1,12 @@
 function Remove-BrowserCache {
   <#
   .SYNOPSIS
-    This will remove internet browers user data
+    This will remove internet browers' cached user data
   .DESCRIPTION
     This script removes all of the user data stored by the browser/s, It first needs
     to stop all of the current browser processes before it can remove the user data.
     It will then attempt to remove all of the user data from the chosen browser/s.
-    This script will choose all three browsers if none are chosen from the BrowserType
+    This script will choose all four browsers if none are chosen from the BrowserType
     parameter.
   .Parameter BrowserType
     This parameter has four options Chrome, Firefox, Edge and IExplore. These can be entered
@@ -39,7 +39,7 @@ function Remove-BrowserCache {
     [string[]]$BrowserType = @('Chrome','FireFox','IExplore','MSEdge')
   )
   if ($PSCmdlet.ShouldProcess(($BrowserType -join ' and '), "Terminating processes")) {
-    Write-Warning 'Killing all current brower sessions, hopefully?'
+    Write-Verbose 'Killing all current brower sessions, hopefully?'
     Get-Process | Where-Object {$_.ProcessName -in $BrowserType} | Stop-Process -Force
     $Counter = 0
     do {
@@ -58,12 +58,12 @@ function Remove-BrowserCache {
         $ChromePath = $env:LOCALAPPDATA + "\Google\Chrome\User Data\*"
         if (Test-Path ($env:LOCALAPPDATA + "\Google\Chrome\User Data")) {
           try {
-            Write-Warning 'Attempting to clear user data from Chrome'
+            Write-Verbose 'Attempting to clear user data from Chrome'
             Remove-Item -Path $ChromePath -Recurse -Force -ErrorAction stop
           }
           catch {Write-Warning 'Cannot delete the Chrome user data'}
         }
-        else {Write-Warning 'No user data exists for the Chrome browser'}
+        else {Write-Verbose 'No user data exists for the Chrome browser'}
       }
     }
     {$_ -contains 'Firefox'}  {
@@ -71,28 +71,31 @@ function Remove-BrowserCache {
         if (Test-Path $env:APPDATA\Mozilla\Firefox\Profiles) {
           $FirefoxProfileFolders = (Get-ChildItem $env:APPDATA\Mozilla\Firefox\Profiles\ -Directory).FullName
           Try {
-            Write-Warning 'Attempting to clear user data from Chrome Firefox'
+            Write-Verbose 'Attempting to clear user data from Chrome Firefox'
             foreach ($ProfDir in $FirefoxProfileFolders) {
               Remove-Item -Recurse -Force -Path $ProfDir\* -ErrorAction stop
             }
           }
           Catch {Write-Warning 'Cannot delete the Firefox user data'}
         }
-        else {Write-Warning 'No user data exists for the Firefox browser'}    
+        else {Write-Verbose 'No user data exists for the Firefox browser'}    
       }
     }
     {$_ -contains 'IExplore'} {
       if ($PSCmdlet.ShouldProcess('Internet Explorer', "Delete User Data")) {
-        Write-Warning 'Attempting to clear user data from Internet Explorer'
+        Write-Verbose 'Attempting to clear user data from Internet Explorer'
         invoke-command -ScriptBlock {RunDll32.exe InetCpl.cpl, ClearMyTracksByProcess 255}
       }
     }
     {$_ -contains 'MSEdge'} {
       if ($PSCmdlet.ShouldProcess('Edge', "Delete User Data")) {
-        Write-Warning 'Attempting to clear user data from Edge'
-        if (Test-Path "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default") {
-          Remove-Item "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default" -Recurse -Force
+        Write-Verbose 'Attempting to clear user data from Edge'
+        try {
+          if (Test-Path "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default") {
+            Remove-Item "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default" -Recurse -Force -ErrorAction Stop
+          }
         }
+        catch {Write-Warning 'Cannot delete the Edge user data'}
       }
     }    
     Default {Write-Warning 'Failed to clear user data, can only clear user data from Chrome, Firefox, Edge and Internet Explorer'}
